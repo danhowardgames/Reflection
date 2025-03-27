@@ -22,6 +22,7 @@ LASER_COLOR = (255, 50, 50)
 LASER_INDICATOR_COLOR = (50, 200, 255)
 LASER_WIDTH = 3
 LASER_INDICATOR_WIDTH = 2
+LASER_DISPLAY_DURATION = 0.5  # Seconds that the laser visual effect is displayed
 
 # Enemy Settings
 ENEMY_SIZE = 35

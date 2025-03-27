@@ -1,4 +1,5 @@
 import pygame
+import math
 from settings import *
 from utils import normalize_vector, raycast, vector_to_angle, is_angle_in_arc
 
@@ -11,11 +12,16 @@ class Laser:
         self.end_pos = None
         self.hit_object = None
         self.ricochet_direction = None
+        self.display_duration = LASER_DISPLAY_DURATION
+        self.display_timer = 0
+        self.visual_active = False
     
     def fire(self, player_pos, shay_pos, shay, walls, enemies):
         """Fire a laser from player to shay, then ricochet according to shay's settings"""
         print(f"Laser firing from {player_pos} to {shay_pos}")
         self.active = True
+        self.visual_active = True
+        self.display_timer = 0
         self.start_pos = player_pos
         self.shay_pos = shay_pos
         
@@ -98,40 +104,52 @@ class Laser:
         return None
     
     def deactivate(self):
-        """Turn off the laser"""
+        """Turn off the laser game logic (but keep visual effect until timer expires)"""
         self.active = False
-        self.start_pos = None
-        self.shay_pos = None
-        self.end_pos = None
-        self.hit_object = None
-        self.ricochet_direction = None
     
     def draw(self, surface):
         """Draw the laser beam"""
-        if not self.active:
+        if not self.visual_active or not self.start_pos or not self.shay_pos:
             return
-            
+        
+        # Calculate pulse effect based on timer
+        time_factor = self.display_timer / self.display_duration
+        pulse_width = int(LASER_WIDTH * (2.0 - time_factor))  # Width decreases over time
+        
+        # Create a brighter laser color for better visibility
+        bright_factor = 1.0 - time_factor * 0.7
+        laser_color = (255, 50 + int(100 * bright_factor), 50 + int(100 * bright_factor))
+        
         # Draw line from player to Shay
         pygame.draw.line(
             surface,
-            LASER_COLOR,
+            laser_color,
             self.start_pos,
             self.shay_pos,
-            LASER_WIDTH
+            pulse_width
         )
         
         # Draw ricochet line from Shay to end point
         if self.end_pos:
             pygame.draw.line(
                 surface,
-                LASER_COLOR,
+                laser_color,
                 self.shay_pos,
                 self.end_pos,
-                LASER_WIDTH
+                pulse_width
             )
             
-        # Draw impact points
+        # Draw impact points with pulsing effect
+        impact_radius = 5 + int(3 * math.sin(self.display_timer * 20))
         if self.shay_pos:
-            pygame.draw.circle(surface, LASER_COLOR, (int(self.shay_pos[0]), int(self.shay_pos[1])), 5)
+            pygame.draw.circle(surface, laser_color, (int(self.shay_pos[0]), int(self.shay_pos[1])), impact_radius)
         if self.end_pos:
-            pygame.draw.circle(surface, LASER_COLOR, (int(self.end_pos[0]), int(self.end_pos[1])), 5) 
+            pygame.draw.circle(surface, laser_color, (int(self.end_pos[0]), int(self.end_pos[1])), impact_radius)
+    
+    def update(self, dt):
+        """Update laser visual effect timer"""
+        if self.visual_active:
+            self.display_timer += dt
+            if self.display_timer >= self.display_duration:
+                self.visual_active = False
+                print("Laser visual effect ended") 

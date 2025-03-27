@@ -98,6 +98,9 @@ class Game:
             # Update player
             self.player.update(dt, self.keys, self.shay.pos)
             
+            # Update laser visual effect
+            self.laser.update(dt)
+            
             # Handle laser firing - check for space key just pressed
             if space_just_pressed and self.player.can_fire:
                 print("Firing laser from space_just_pressed")
@@ -121,7 +124,11 @@ class Game:
             
             # Update enemies if in playing state
             if self.game_state == GAME_STATE_PLAYING:
-                player_hit = self.enemy_spawner.update(dt, self.player.pos, self.player.rect)
+                player_hit = self.enemy_spawner.update(
+                    dt, 
+                    self.player.pos, 
+                    self.player.rect
+                )
                 
                 # Check if player was hit
                 if player_hit:
@@ -135,13 +142,14 @@ class Game:
                 
                 # If wave has started, change state
                 if wave_result is not None:
-                    if wave_result:  # New wave started
-                        print(f"Starting wave {self.enemy_spawner.current_wave}")
-                        self.game_state = GAME_STATE_PLAYING
-                    else:  # No more waves, game won
-                        self.game_state = GAME_STATE_VICTORY
+                    if isinstance(wave_result, bool):  # New wave result format
+                        if wave_result:  # New wave started
+                            print(f"Starting wave {self.enemy_spawner.current_wave}")
+                            self.game_state = GAME_STATE_PLAYING
+                        else:  # No more waves, game won
+                            self.game_state = GAME_STATE_VICTORY
             
-            # Deactivate laser after one frame
+            # Deactivate laser game logic after one frame, but let visual effect continue
             if self.laser.active:
                 self.laser.deactivate()
     
