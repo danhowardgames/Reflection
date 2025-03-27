@@ -21,20 +21,29 @@ class Shay:
             self.target_pos[1] - self.pos[1]
         )
         
-        # Move smoothly towards target if not already at target
+        # Calculate distance to target
         dist = math.sqrt(direction[0]**2 + direction[1]**2)
-        if dist > 5:  # Only move if far enough from target
-            # Normalize direction and apply smooth follow
+        
+        # For very short distances or instant response, teleport directly
+        if dist < SHAY_DIRECT_FOLLOW_THRESHOLD:
+            self.pos = self.target_pos
+        elif dist > 5:  # Only move if far enough from target
+            # Normalize direction
             direction = normalize_vector(direction)
             
-            # Apply smooth movement
+            # Apply faster movement with distance-based speed
+            # Faster movement when far away, ensures quick response
+            speed_multiplier = min(1.0, dist / 200.0) * 2.0 + 1.0
+            move_speed = SHAY_FOLLOW_SPEED * speed_multiplier
+            
+            # Move towards target
             self.pos = (
-                self.pos[0] + direction[0] * dist * SHAY_FOLLOW_SPEED * dt,
-                self.pos[1] + direction[1] * dist * SHAY_FOLLOW_SPEED * dt
+                self.pos[0] + direction[0] * dist * move_speed * dt,
+                self.pos[1] + direction[1] * dist * move_speed * dt
             )
             
-            # Update rectangle position
-            self.rect.center = self.pos
+        # Update rectangle position
+        self.rect.center = self.pos
     
     def modify_ricochet_angle(self, clockwise=True):
         # Modify ricochet angle by the increment

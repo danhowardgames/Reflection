@@ -9,12 +9,16 @@ PLAYER_SPEED = 300
 PLAYER_SIZE = 40
 PLAYER_COLOR = (0, 150, 255)
 PLAYER_MAX_HEALTH = 3
+PLAYER_ACCELERATION = 12.0  # Acceleration rate
+PLAYER_DECELERATION = 6.0   # Deceleration rate
+PLAYER_MAX_VELOCITY = 300   # Maximum velocity
 LASER_COOLDOWN = 0.5
 
 # Shay (Robot) Settings
 SHAY_SIZE = 35
 SHAY_COLOR = (100, 255, 100)
-SHAY_FOLLOW_SPEED = 0.5  # Lower value = smoother following
+SHAY_FOLLOW_SPEED = 2.0  # Higher value = more responsive following
+SHAY_DIRECT_FOLLOW_THRESHOLD = 25  # Distance threshold for direct teleport
 RICOCHET_ANGLE_INCREMENT = 22.5  # In degrees
 
 # Laser Settings
