@@ -59,15 +59,19 @@ class Player:
             if self.laser_cooldown_timer >= LASER_COOLDOWN:
                 self.can_fire = True
                 self.laser_cooldown_timer = 0
+                print("Laser ready to fire again")
     
     def fire_laser(self, shay_pos):
         if self.can_fire:
             self.can_fire = False
             self.laser_cooldown_timer = 0
+            print(f"Firing laser from {self.pos} to {shay_pos}")
             # Calculate direction vector from Ric to Shay
             direction = (shay_pos[0] - self.pos[0], shay_pos[1] - self.pos[1])
             # Return the direction for the laser to follow
             return direction
+        else:
+            print(f"Cannot fire yet. Cooldown: {self.laser_cooldown_timer:.2f}/{LASER_COOLDOWN}")
         return None
     
     def take_damage(self):
@@ -78,13 +82,12 @@ class Player:
         self.move(dt, keys)
         self.update_laser_cooldown(dt)
         
-        # Fire laser if the space key is pressed
-        laser_direction = None
-        if keys[pygame.K_SPACE]:
-            laser_direction = self.fire_laser(shay_pos)
+        # Note: We no longer handle the SPACE key here as it's
+        # now handled by the Game class with space_just_pressed
         
-        return laser_direction
-    
+        # Update rectangle position just to be sure
+        self.rect.center = self.pos
+        
     def draw(self, surface):
         # Draw the player character
         pygame.draw.rect(surface, PLAYER_COLOR, self.rect)
@@ -93,6 +96,14 @@ class Player:
         for i in range(self.health):
             health_rect = pygame.Rect(10 + i * 30, 10, 20, 20)
             pygame.draw.rect(surface, (255, 0, 0), health_rect)
+        
+        # Draw cooldown indicator
+        if not self.can_fire:
+            cooldown_percentage = self.laser_cooldown_timer / LASER_COOLDOWN
+            cooldown_width = 40 * cooldown_percentage
+            cooldown_rect = pygame.Rect(10, 40, cooldown_width, 10)
+            pygame.draw.rect(surface, (150, 150, 255), cooldown_rect)
+            pygame.draw.rect(surface, (100, 100, 200), pygame.Rect(10, 40, 40, 10), 1)
         
         # Debug - draw collision rect if debug is enabled
         if DEBUG_MODE:

@@ -51,6 +51,7 @@ class Game:
             # Toggle debug mode
             if event.key == pygame.K_F1:
                 self.debug_mode = not self.debug_mode
+                print(f"Debug mode: {self.debug_mode}")
                 
             # Skip wave (debug)
             if event.key == pygame.K_f and self.debug_mode:
@@ -74,10 +75,13 @@ class Game:
             if event.key == pygame.K_SPACE and self.game_state == GAME_STATE_MENU:
                 self.game_state = GAME_STATE_WAVE_TRANSITION
     
-    def update(self, dt):
+    def update(self, dt, keys=None, space_just_pressed=False):
         """Update game state and all entities"""
         # Get all pressed keys
-        self.keys = pygame.key.get_pressed()
+        if keys is None:
+            self.keys = pygame.key.get_pressed()
+        else:
+            self.keys = keys
         
         # Get mouse position
         mouse_pos = pygame.mouse.get_pos()
@@ -91,22 +95,29 @@ class Game:
             # Update Shay
             self.shay.update(dt, mouse_pos, self.keys)
             
-            # Update player and get laser direction if fired
-            laser_direction = self.player.update(dt, self.keys, self.shay.pos)
+            # Update player
+            self.player.update(dt, self.keys, self.shay.pos)
             
-            # If laser was fired, activate it
-            if laser_direction:
-                hit_enemy = self.laser.fire(
-                    self.player.pos, 
-                    self.shay.pos, 
-                    self.shay, 
-                    self.walls, 
-                    self.enemy_spawner.enemies
-                )
+            # Handle laser firing - check for space key just pressed
+            if space_just_pressed and self.player.can_fire:
+                print("Firing laser from space_just_pressed")
+                laser_direction = self.player.fire_laser(self.shay.pos)
                 
-                # Handle enemy hit if any
-                if hit_enemy:
-                    self.enemy_spawner.handle_laser_hit(hit_enemy)
+                # If laser direction is valid, activate it
+                if laser_direction:
+                    print(f"Game received laser direction: {laser_direction}")
+                    hit_enemy = self.laser.fire(
+                        self.player.pos, 
+                        self.shay.pos, 
+                        self.shay, 
+                        self.walls, 
+                        self.enemy_spawner.enemies
+                    )
+                    
+                    # Handle enemy hit if any
+                    if hit_enemy:
+                        print(f"Hit enemy at {hit_enemy.pos}")
+                        self.enemy_spawner.handle_laser_hit(hit_enemy)
             
             # Update enemies if in playing state
             if self.game_state == GAME_STATE_PLAYING:
@@ -125,6 +136,7 @@ class Game:
                 # If wave has started, change state
                 if wave_result is not None:
                     if wave_result:  # New wave started
+                        print(f"Starting wave {self.enemy_spawner.current_wave}")
                         self.game_state = GAME_STATE_PLAYING
                     else:  # No more waves, game won
                         self.game_state = GAME_STATE_VICTORY

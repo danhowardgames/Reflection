@@ -14,6 +14,7 @@ class Laser:
     
     def fire(self, player_pos, shay_pos, shay, walls, enemies):
         """Fire a laser from player to shay, then ricochet according to shay's settings"""
+        print(f"Laser firing from {player_pos} to {shay_pos}")
         self.active = True
         self.start_pos = player_pos
         self.shay_pos = shay_pos
@@ -21,20 +22,25 @@ class Laser:
         # Check if laser hits Shay
         if not self._calculate_path_to_shay(walls):
             # Didn't hit Shay, laser terminates early
+            print("Laser blocked before reaching Shay")
             self.active = False
             return None
         
         # Calculate ricochet direction using Shay's algorithm
         direction_to_shay = (shay_pos[0] - player_pos[0], shay_pos[1] - player_pos[1])
         self.ricochet_direction = shay.calculate_ricochet_vector(direction_to_shay, player_pos)
+        print(f"Ricochet direction: {self.ricochet_direction}")
         
         # Cast ray from Shay in the ricochet direction
         hit_pos, hit_obj = raycast(self.shay_pos, self.ricochet_direction, walls)
         self.end_pos = hit_pos
         self.hit_object = hit_obj
+        print(f"Ricochet end point: {self.end_pos}")
         
         # Check if any enemies were hit by the ricochet
         hit_enemy = self._check_enemy_hits(enemies)
+        if hit_enemy:
+            print(f"Hit enemy with laser at {hit_enemy.pos}")
         
         return hit_enemy
     
@@ -52,6 +58,7 @@ class Laser:
         # Allow a small margin of error
         if dist_to_hit < dist_to_shay - 5:
             # Hit something before reaching Shay
+            print(f"Laser hit wall at {hit_pos} before reaching Shay")
             self.end_pos = hit_pos
             self.hit_object = hit_obj
             return False
@@ -79,9 +86,14 @@ class Laser:
                     (-self.ricochet_direction[0], -self.ricochet_direction[1])
                 )
                 
+                print(f"Laser hit enemy - incoming angle: {incoming_angle}, vulnerable angle: {enemy.vulnerable_angle}")
+                
                 if is_angle_in_arc(incoming_angle, enemy.vulnerable_angle, VULNERABLE_ARC_SIZE):
                     # Enemy is hit from vulnerable direction
+                    print("Enemy hit from vulnerable angle!")
                     return enemy
+                else:
+                    print("Enemy hit but not from vulnerable angle")
         
         return None
     
