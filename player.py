@@ -15,6 +15,11 @@ class Player:
         self.laser_cooldown_timer = 0
         self.can_fire = True
         
+        # Invulnerability state
+        self.invulnerable = False
+        self.invulnerability_timer = 0
+        self.invulnerability_duration = PLAYER_INVULNERABILITY_DURATION
+        
     def move(self, dt, keys):
         # Get input direction
         input_dir = [0, 0]
@@ -111,22 +116,43 @@ class Player:
         return None
     
     def take_damage(self):
+        # If invulnerable, don't take damage
+        if self.invulnerable:
+            return False
+            
+        # Take damage
         self.health -= 1
+        
         return self.health <= 0
     
+    def make_invulnerable(self):
+        """Make the player invulnerable for the set duration"""
+        self.invulnerable = True
+        self.invulnerability_timer = 0
+        
     def update(self, dt, keys, shay_pos):
         self.move(dt, keys)
         self.update_laser_cooldown(dt)
         
-        # Note: We no longer handle the SPACE key here as it's
-        # now handled by the Game class with space_just_pressed
+        # Update invulnerability
+        if self.invulnerable:
+            self.invulnerability_timer += dt
+            if self.invulnerability_timer >= self.invulnerability_duration:
+                self.invulnerable = False
         
         # Update rectangle position just to be sure
         self.rect.center = self.pos
         
     def draw(self, surface):
-        # Draw the player character
-        pygame.draw.rect(surface, PLAYER_COLOR, self.rect)
+        # Draw the player character with alpha if invulnerable
+        if self.invulnerable:
+            # Create a surface with alpha
+            alpha = 128 + int(127 * math.sin(self.invulnerability_timer * 10))  # Pulsing effect
+            s = pygame.Surface((PLAYER_SIZE, PLAYER_SIZE), pygame.SRCALPHA)
+            s.fill((PLAYER_COLOR[0], PLAYER_COLOR[1], PLAYER_COLOR[2], alpha))
+            surface.blit(s, (self.rect.x, self.rect.y))
+        else:
+            pygame.draw.rect(surface, PLAYER_COLOR, self.rect)
         
         # Draw velocity indicator (motion blur effect)
         if (abs(self.current_velocity[0]) > 50 or abs(self.current_velocity[1]) > 50):

@@ -12,6 +12,7 @@ PLAYER_MAX_HEALTH = 3
 PLAYER_ACCELERATION = 12.0  # Acceleration rate
 PLAYER_DECELERATION = 6.0   # Deceleration rate
 PLAYER_MAX_VELOCITY = 300   # Maximum velocity
+PLAYER_INVULNERABILITY_DURATION = 2.0  # Seconds player is invulnerable after being hit
 LASER_COOLDOWN = 0.5
 
 # Shay (Robot) Settings

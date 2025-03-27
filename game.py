@@ -127,14 +127,22 @@ class Game:
                 player_hit = self.enemy_spawner.update(
                     dt, 
                     self.player.pos, 
-                    self.player.rect
+                    self.player.rect,
+                    self.player.invulnerable
                 )
                 
-                # Check if player was hit
+                # Handle player-enemy collision
                 if player_hit:
-                    game_over = self.player.take_damage()
-                    if game_over:
-                        self.game_state = GAME_STATE_GAME_OVER
+                    # If not invulnerable, take damage and become invulnerable
+                    if not self.player.invulnerable:
+                        game_over = self.player.take_damage()
+                        if game_over:
+                            self.game_state = GAME_STATE_GAME_OVER
+                            return
+                        self.player.make_invulnerable()
+                        
+                        # Find and destroy the colliding enemy
+                        self._destroy_colliding_enemy()
             
             # Update enemy spawner for wave transitions
             else:
@@ -225,3 +233,12 @@ class Game:
             debug_text = f"DEBUG MODE | FPS: {int(pygame.time.Clock().get_fps())} | F: Skip Wave | G: God Mode"
             debug_surf = font.render(debug_text, True, DEBUG_COLOR)
             self.screen.blit(debug_surf, (10, HEIGHT - 20)) 
+
+    def _destroy_colliding_enemy(self):
+        """Destroy the enemy that is colliding with the player"""
+        for enemy in self.enemy_spawner.enemies[:]:  # Create a copy of the list to safely modify during iteration
+            if enemy.check_player_collision(self.player.rect):
+                # Handle the enemy hit (this already puts it in dying state)
+                self.enemy_spawner.handle_laser_hit(enemy)
+                print(f"Enemy destroyed due to player collision at {enemy.pos}")
+                break  # Only destroy one enemy per frame 

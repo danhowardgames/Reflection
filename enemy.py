@@ -53,7 +53,7 @@ class Enemy:
         # Check if collided with player
         return False
     
-    def check_player_collision(self, player_rect):
+    def check_player_collision(self, player_rect, player_invulnerable=False):
         """Check if enemy has collided with the player"""
         return self.rect.colliderect(player_rect) if self.state == self.STATE_MOVING else False
     
@@ -156,7 +156,7 @@ class EnemySpawner:
         self.wave_transition_timer = 0
         self.in_wave_transition = True
     
-    def update(self, dt, player_pos, player_rect):
+    def update(self, dt, player_pos, player_rect, player_invulnerable=False):
         """Update enemy spawning and all existing enemies"""
         # Handle wave transition
         if self.in_wave_transition:
@@ -189,7 +189,9 @@ class EnemySpawner:
             if should_remove:
                 enemies_to_remove.append(enemy)
             elif enemy.check_player_collision(player_rect):
-                player_hit = True
+                if not player_invulnerable:
+                    # Only register a hit if player is not invulnerable
+                    player_hit = True
         
         # Remove dead enemies
         for enemy in enemies_to_remove:
