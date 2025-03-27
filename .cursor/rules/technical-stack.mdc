@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Technical stack
+
+- Language: Python
+- Libraries: Pygame
+- python for testing
