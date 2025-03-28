@@ -31,7 +31,7 @@ LASER_DISPLAY_DURATION = 0.5  # Seconds that the laser visual effect is displaye
 
 # Enemy Settings
 ENEMY_SIZE = 35
-ENEMY_BASE_SPEED = 100
+ENEMY_BASE_SPEED = 50
 ENEMY_COLORS = [(255, 100, 100), (255, 150, 50), (255, 200, 0), (200, 100, 200), (255, 50, 200)]
 VULNERABLE_ARC_SIZE = 90  # Size of the vulnerable arc in degrees
 
