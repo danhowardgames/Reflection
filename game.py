@@ -124,7 +124,7 @@ class Game:
             
             # Update enemies if in playing state
             if self.game_state == GAME_STATE_PLAYING:
-                player_hit = self.enemy_spawner.update(
+                player_hit, _ = self.enemy_spawner.update(
                     dt, 
                     self.player.pos, 
                     self.player.rect,
@@ -146,16 +146,37 @@ class Game:
             
             # Update enemy spawner for wave transitions
             else:
-                wave_result = self.enemy_spawner.update(dt, self.player.pos, self.player.rect)
+                player_hit, wave_result = self.enemy_spawner.update(
+                    dt, 
+                    self.player.pos, 
+                    self.player.rect,
+                    self.player.invulnerable  # Pass player invulnerability state
+                )
                 
-                # If wave has started, change state
+                # Handle player-enemy collision during wave transition
+                if player_hit:
+                    # If not invulnerable, take damage and become invulnerable
+                    if not self.player.invulnerable:
+                        game_over = self.player.take_damage()
+                        if game_over:
+                            self.game_state = GAME_STATE_GAME_OVER
+                            return
+                        self.player.make_invulnerable()
+                        
+                        # Find and destroy the colliding enemy
+                        self._destroy_colliding_enemy()
+                
+                # Check if wave transition is complete
                 if wave_result is not None:
-                    if isinstance(wave_result, bool):  # New wave result format
-                        if wave_result:  # New wave started
-                            print(f"Starting wave {self.enemy_spawner.current_wave}")
-                            self.game_state = GAME_STATE_PLAYING
-                        else:  # No more waves, game won
-                            self.game_state = GAME_STATE_VICTORY
+                    if wave_result:  # New wave started
+                        print(f"Starting wave {self.enemy_spawner.current_wave}")
+                        self.game_state = GAME_STATE_PLAYING
+                        
+                        # Make player briefly invulnerable when wave starts to avoid
+                        # getting hit immediately at wave start
+                        self.player.make_invulnerable()
+                    else:  # No more waves, game won
+                        self.game_state = GAME_STATE_VICTORY
             
             # Deactivate laser game logic after one frame, but let visual effect continue
             if self.laser.active:

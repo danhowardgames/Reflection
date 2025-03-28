@@ -157,30 +157,39 @@ class EnemySpawner:
         self.in_wave_transition = True
     
     def update(self, dt, player_pos, player_rect, player_invulnerable=False):
-        """Update enemy spawning and all existing enemies"""
+        """Update enemy spawning and all existing enemies
+        
+        Returns:
+            tuple: (player_hit, wave_result)
+                - player_hit: True if player was hit, False otherwise
+                - wave_result: 
+                    - None: still in current wave
+                    - True: wave transition complete, new wave started
+                    - False: all waves complete, game won
+        """
+        player_hit = False
+        wave_result = None
+        
         # Handle wave transition
         if self.in_wave_transition:
             self.wave_transition_timer += dt
             if self.wave_transition_timer >= WAVE_TRANSITION_TIME:
-                return self.start_wave()
-            return None
-            
+                wave_result = self.start_wave()
+        
         # Check if wave is complete
-        if self.wave_enemies_left <= 0 and len(self.enemies) == 0:
+        elif self.wave_enemies_left <= 0 and len(self.enemies) == 0:
             self.start_wave_transition()
-            return None
             
         # Update spawn timer
         self.spawn_timer += dt
         
         # Spawn new enemy if it's time and we have enemies left to spawn
-        if self.spawn_timer >= self.spawn_delay and self.wave_enemies_left > 0:
+        if not self.in_wave_transition and self.spawn_timer >= self.spawn_delay and self.wave_enemies_left > 0:
             self.spawn_enemy(player_pos)
             self.spawn_timer = 0
             self.wave_enemies_left -= 1
             
         # Update all enemies
-        player_hit = False
         enemies_to_remove = []
         
         for enemy in self.enemies:
@@ -198,7 +207,7 @@ class EnemySpawner:
             if enemy in self.enemies:  # Ensure it's still in the list
                 self.enemies.remove(enemy)
                 
-        return player_hit
+        return (player_hit, wave_result)
     
     def spawn_enemy(self, player_pos):
         """Spawn a new enemy at a random position away from the player"""
