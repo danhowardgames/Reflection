@@ -15,6 +15,15 @@ PLAYER_MAX_VELOCITY = 300   # Maximum velocity
 PLAYER_INVULNERABILITY_DURATION = 2.0  # Seconds player is invulnerable after being hit
 LASER_COOLDOWN = 0.5
 
+# Player Firing Glow Effect Settings
+FIRING_GLOW_SIZE_MULTIPLIER = 2  # Glow size relative to player size
+FIRING_GLOW_PULSE_MIN = 0.7  # Minimum pulse factor
+FIRING_GLOW_PULSE_MAX = 1.0  # Maximum pulse factor
+FIRING_GLOW_PULSE_SPEED = 50  # Pulse speed (lower is faster)
+FIRING_GLOW_OUTER_COLOR = (255, 50, 50, 70)  # Outer glow RGBA
+FIRING_GLOW_INNER_COLOR = (255, 70, 70, 120)  # Inner glow RGBA
+FIRING_GLOW_INNER_RADIUS_FACTOR = 0.7  # Inner glow radius relative to outer radius
+
 # Shay (Robot) Settings
 SHAY_SIZE = 35
 SHAY_COLOR = (100, 255, 100)

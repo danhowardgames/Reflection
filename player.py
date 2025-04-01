@@ -175,7 +175,45 @@ class Player:
             s.fill((PLAYER_COLOR[0], PLAYER_COLOR[1], PLAYER_COLOR[2], alpha))
             surface.blit(s, (self.rect.x, self.rect.y))
         else:
+            # Draw normal player
             pygame.draw.rect(surface, PLAYER_COLOR, self.rect)
+            
+            # Add glowing red effect when in firing state
+            if self.state == PLAYER_STATE_FIRING:
+                # Create a larger surface for the glow
+                glow_size = PLAYER_SIZE * FIRING_GLOW_SIZE_MULTIPLIER
+                glow_surface = pygame.Surface((int(glow_size), int(glow_size)), pygame.SRCALPHA)
+                
+                # Draw a pulsing red circle for the glow effect
+                pulse_range = FIRING_GLOW_PULSE_MAX - FIRING_GLOW_PULSE_MIN
+                pulse_factor = FIRING_GLOW_PULSE_MIN + pulse_range * math.sin(pygame.time.get_ticks() / FIRING_GLOW_PULSE_SPEED)
+                glow_radius = int(glow_size/2 * pulse_factor)
+                glow_center = (int(glow_size/2), int(glow_size/2))
+                
+                # Outer glow
+                pygame.draw.circle(
+                    glow_surface,
+                    FIRING_GLOW_OUTER_COLOR,
+                    glow_center,
+                    glow_radius
+                )
+                
+                # Inner glow
+                pygame.draw.circle(
+                    glow_surface,
+                    FIRING_GLOW_INNER_COLOR,
+                    glow_center,
+                    int(glow_radius * FIRING_GLOW_INNER_RADIUS_FACTOR)
+                )
+                
+                # Blit the glow surface centered on the player
+                surface.blit(
+                    glow_surface,
+                    (
+                        self.rect.centerx - glow_surface.get_width() // 2,
+                        self.rect.centery - glow_surface.get_height() // 2
+                    )
+                )
         
         # Draw velocity indicator (motion blur effect)
         if (abs(self.current_velocity[0]) > 50 or abs(self.current_velocity[1]) > 50):
