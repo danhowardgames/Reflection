@@ -29,6 +29,19 @@ LASER_WIDTH = 3
 LASER_INDICATOR_WIDTH = 2
 LASER_DISPLAY_DURATION = 0.5  # Seconds that the laser visual effect is displayed
 
+# Laser Impact Effect Settings
+IMPACT_BASE_RADIUS = 20      # Base size of the impact circle
+IMPACT_PULSE_RANGE = 12      # How much the impact size varies during pulsing
+IMPACT_GLOW_MULTIPLIER = 1.5  # Size multiplier for outer glow effect (relative to base)
+IMPACT_GLOW_ALPHA = 100      # Transparency of the glow effect (0-255)
+IMPACT_PULSE_SPEED = 20      # Speed of the pulsing animation
+
+# Reflection Effect Settings
+REFLECTION_LINE_COUNT = 3    # Number of reflection lines
+REFLECTION_MIN_LENGTH = 1.5  # Minimum length multiplier relative to SHAY_SIZE
+REFLECTION_MAX_LENGTH = 2.5  # Maximum length multiplier relative to SHAY_SIZE
+REFLECTION_LINE_WIDTH_DIVISOR = 2  # Divides main laser width to get reflection line width
+
 # Enemy Settings
 ENEMY_SIZE = 35
 ENEMY_BASE_SPEED = 50

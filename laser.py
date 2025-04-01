@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 from settings import *
 from utils import normalize_vector, raycast, vector_to_angle, is_angle_in_arc
 
@@ -15,6 +16,9 @@ class Laser:
         self.display_duration = LASER_DISPLAY_DURATION
         self.display_timer = 0
         self.visual_active = False
+        # Reflection effect variables
+        self.reflection_angles = []
+        self.reflection_lengths = []
     
     def fire(self, player_pos, shay_pos, shay, walls, enemies):
         """Fire a laser from player to shay, then ricochet according to shay's settings"""
@@ -25,6 +29,10 @@ class Laser:
         self.start_pos = player_pos
         self.shay_pos = shay_pos  # Initially set to target, may be nullified if blocked
         self.ricochet_direction = None  # Reset ricochet direction
+        
+        # Reset reflection effect
+        self.reflection_angles = []
+        self.reflection_lengths = []
         
         # Check if laser hits Shay (or is blocked by walls or enemies)
         blocked_by_enemy = self._calculate_path_to_shay(walls, enemies)
@@ -49,6 +57,9 @@ class Laser:
         self.ricochet_direction = shay.calculate_ricochet_vector(direction_to_shay, player_pos)
         print(f"Ricochet direction: {self.ricochet_direction}")
         
+        # Generate reflection effect parameters
+        self._generate_reflection_effect(direction_to_shay)
+        
         # Cast ray from Shay in the ricochet direction
         hit_pos, hit_obj = raycast(self.shay_pos, self.ricochet_direction, walls)
         self.end_pos = hit_pos
@@ -65,6 +76,29 @@ class Laser:
             print(f"Hit enemy with laser at {hit_enemy.pos}")
         
         return hit_enemy
+    
+    def _generate_reflection_effect(self, incoming_vector):
+        """Generate random reflection lines within a 180-degree arc"""
+        # Calculate the perpendicular direction to the incoming vector (for 180 degree arc)
+        incoming_angle = vector_to_angle(incoming_vector)
+        perpendicular_angle = (incoming_angle + 90) % 360
+        
+        # The reflection arc will be 180 degrees centered around the perpendicular
+        arc_start = (perpendicular_angle - 90) % 360
+        
+        # Generate random reflection lines
+        self.reflection_angles = []
+        self.reflection_lengths = []
+        
+        for _ in range(REFLECTION_LINE_COUNT):
+            # Random angle within the 180 degree arc
+            angle = (arc_start + random.random() * 180) % 360
+            # Random length (within configured range)
+            length = SHAY_SIZE * (REFLECTION_MIN_LENGTH + random.random() * 
+                                 (REFLECTION_MAX_LENGTH - REFLECTION_MIN_LENGTH))
+            
+            self.reflection_angles.append(angle)
+            self.reflection_lengths.append(length)
     
     def _calculate_path_to_shay(self, walls, enemies=None):
         """Calculate if laser from player to Shay hits any walls or enemies
@@ -295,13 +329,28 @@ class Laser:
         # Calculate pulse effect based on timer
         time_factor = self.display_timer / self.display_duration
         pulse_width = int(LASER_WIDTH * (2.0 - time_factor))  # Width decreases over time
+        pulse_width = max(1, pulse_width)  # Ensure minimum width of 1
         
         # Create a brighter laser color for better visibility
         bright_factor = 1.0 - time_factor * 0.7
         laser_color = (255, 50 + int(100 * bright_factor), 50 + int(100 * bright_factor))
         
-        # Calculate impact radius for all impact points
-        impact_radius = 5 + int(3 * math.sin(self.display_timer * 20))
+        # Enhanced impact effect using settings constants with safety checks
+        base_impact_radius = IMPACT_BASE_RADIUS + int(IMPACT_PULSE_RANGE * math.sin(self.display_timer * IMPACT_PULSE_SPEED))
+        base_impact_radius = max(1, base_impact_radius)  # Ensure minimum radius of 1
+        impact_glow_radius = int(base_impact_radius * IMPACT_GLOW_MULTIPLIER)
+        impact_glow_radius = max(2, impact_glow_radius)  # Ensure minimum glow radius of 2
+        
+        # Create the glow surface that will be reused
+        glow_color = (laser_color[0], laser_color[1], laser_color[2], IMPACT_GLOW_ALPHA)
+        glow_surface_size = max(4, impact_glow_radius * 2)  # Minimum size of 4 pixels
+        glow_surface = pygame.Surface((glow_surface_size, glow_surface_size), pygame.SRCALPHA)
+        pygame.draw.circle(
+            glow_surface,
+            glow_color,
+            (glow_surface_size // 2, glow_surface_size // 2),  # Center of the surface
+            impact_glow_radius
+        )
         
         # Case 1: Laser blocked before reaching Shay (hits wall or enemy)
         if not self.shay_pos:
@@ -315,12 +364,18 @@ class Laser:
                     pulse_width
                 )
                 
-                # Draw impact at end point
+                # Draw enhanced impact at end point where laser was blocked
+                surface.blit(
+                    glow_surface, 
+                    (int(self.end_pos[0] - glow_surface_size // 2), int(self.end_pos[1] - glow_surface_size // 2))
+                )
+                
+                # Then draw the main impact circle
                 pygame.draw.circle(
                     surface, 
                     laser_color, 
                     (int(self.end_pos[0]), int(self.end_pos[1])), 
-                    impact_radius
+                    base_impact_radius
                 )
             return
         
@@ -334,13 +389,23 @@ class Laser:
             pulse_width
         )
         
-        # Draw impact at Shay
-        pygame.draw.circle(
-            surface, 
-            laser_color, 
-            (int(self.shay_pos[0]), int(self.shay_pos[1])), 
-            impact_radius
-        )
+        # Draw the reflection effect (3 lines in a 180 degree arc)
+        if self.reflection_angles and self.ricochet_direction:
+            thin_width = max(1, pulse_width // REFLECTION_LINE_WIDTH_DIVISOR)  # Thinner than the main laser
+            reflection_color = laser_color
+            
+            for i in range(len(self.reflection_angles)):
+                angle_rad = math.radians(self.reflection_angles[i])
+                end_x = self.shay_pos[0] + math.cos(angle_rad) * self.reflection_lengths[i]
+                end_y = self.shay_pos[1] + math.sin(angle_rad) * self.reflection_lengths[i]
+                
+                pygame.draw.line(
+                    surface,
+                    reflection_color,
+                    self.shay_pos,
+                    (end_x, end_y),
+                    thin_width
+                )
         
         # Draw reflection line if applicable (cases 2, 3, 4)
         if self.end_pos and self.ricochet_direction:
@@ -353,12 +418,19 @@ class Laser:
                 pulse_width
             )
             
-            # Draw impact at end point of reflection
+            # Draw enhanced impact at end point of reflection
+            # First draw outer glow
+            surface.blit(
+                glow_surface, 
+                (int(self.end_pos[0] - glow_surface_size // 2), int(self.end_pos[1] - glow_surface_size // 2))
+            )
+            
+            # Then draw main impact
             pygame.draw.circle(
                 surface, 
                 laser_color, 
                 (int(self.end_pos[0]), int(self.end_pos[1])), 
-                impact_radius
+                base_impact_radius
             )
     
     def update(self, dt):
