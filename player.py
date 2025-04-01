@@ -163,6 +163,19 @@ class Player:
             if self.invulnerability_timer >= self.invulnerability_duration:
                 self.invulnerable = False
         
+        # Gradually reduce velocity when in firing state to smoothly fade out motion blur
+        if self.state == PLAYER_STATE_FIRING:
+            # Apply deceleration to both velocity components
+            deceleration_factor = 8.0 * dt  # Increased from 5.0 to 8.0 for faster fade-out
+            self.current_velocity[0] *= max(0, 1 - deceleration_factor)
+            self.current_velocity[1] *= max(0, 1 - deceleration_factor)
+            
+            # Stop very small velocities to avoid floating point issues
+            if abs(self.current_velocity[0]) < 5:
+                self.current_velocity[0] = 0
+            if abs(self.current_velocity[1]) < 5:
+                self.current_velocity[1] = 0
+        
         # Update rectangle position just to be sure
         self.rect.center = self.pos
         
