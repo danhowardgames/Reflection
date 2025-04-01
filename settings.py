@@ -38,8 +38,8 @@ IMPACT_PULSE_SPEED = 20      # Speed of the pulsing animation
 
 # Reflection Effect Settings
 REFLECTION_LINE_COUNT = 3    # Number of reflection lines
-REFLECTION_MIN_LENGTH = 1.5  # Minimum length multiplier relative to SHAY_SIZE
-REFLECTION_MAX_LENGTH = 2.5  # Maximum length multiplier relative to SHAY_SIZE
+REFLECTION_MIN_LENGTH = 1  # Minimum length multiplier relative to SHAY_SIZE
+REFLECTION_MAX_LENGTH = 2  # Maximum length multiplier relative to SHAY_SIZE
 REFLECTION_LINE_WIDTH_DIVISOR = 2  # Divides main laser width to get reflection line width
 
 # Enemy Settings

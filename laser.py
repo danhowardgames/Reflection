@@ -57,7 +57,7 @@ class Laser:
         self.ricochet_direction = shay.calculate_ricochet_vector(direction_to_shay, player_pos)
         print(f"Ricochet direction: {self.ricochet_direction}")
         
-        # Generate reflection effect parameters
+        # Generate reflection effect parameters (after ricochet direction is calculated)
         self._generate_reflection_effect(direction_to_shay)
         
         # Cast ray from Shay in the ricochet direction
@@ -78,20 +78,22 @@ class Laser:
         return hit_enemy
     
     def _generate_reflection_effect(self, incoming_vector):
-        """Generate random reflection lines within a 180-degree arc"""
-        # Calculate the perpendicular direction to the incoming vector (for 180 degree arc)
-        incoming_angle = vector_to_angle(incoming_vector)
-        perpendicular_angle = (incoming_angle + 90) % 360
+        """Generate random reflection lines within a 180-degree arc centered on the reflection angle"""
+        if not self.ricochet_direction:
+            return
+            
+        # Calculate the angle of the ricochet direction
+        reflection_angle = vector_to_angle(self.ricochet_direction)
         
-        # The reflection arc will be 180 degrees centered around the perpendicular
-        arc_start = (perpendicular_angle - 90) % 360
+        # The reflection arc will be 180 degrees centered around the reflection angle
+        arc_start = (reflection_angle - 90) % 360  # Start 90 degrees to the left of reflection
         
         # Generate random reflection lines
         self.reflection_angles = []
         self.reflection_lengths = []
         
         for _ in range(REFLECTION_LINE_COUNT):
-            # Random angle within the 180 degree arc
+            # Random angle within the 180 degree arc centered on reflection angle
             angle = (arc_start + random.random() * 180) % 360
             # Random length (within configured range)
             length = SHAY_SIZE * (REFLECTION_MIN_LENGTH + random.random() * 
