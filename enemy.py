@@ -179,7 +179,7 @@ class EnemySpawner:
         # Check if wave is complete
         elif self.wave_enemies_left <= 0 and len(self.enemies) == 0:
             self.start_wave_transition()
-            
+        
         # Update spawn timer
         self.spawn_timer += dt
         
@@ -256,6 +256,11 @@ class EnemySpawner:
     
     def handle_laser_hit(self, enemy):
         """Enemy was hit by laser"""
+        if enemy in self.enemies:
+            enemy.hit()
+            
+    def handle_player_collision(self, enemy):
+        """Enemy collided with player and should be destroyed"""
         if enemy in self.enemies:
             enemy.hit()
             

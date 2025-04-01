@@ -2,9 +2,9 @@ import pygame
 import math
 from settings import *
 
-def distance(point1, point2):
-    """Calculate Euclidean distance between two points"""
-    return math.sqrt((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2)
+def distance(p1, p2):
+    """Calculate the distance between two points"""
+    return ((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2) ** 0.5
 
 def normalize_vector(vector):
     """Normalize a vector to unit length"""

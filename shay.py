@@ -80,12 +80,12 @@ class Shay:
         elif keys[pygame.K_e]:  # Clockwise rotation
             self.modify_ricochet_angle(clockwise=True)
     
-    def draw(self, surface, player_pos):
+    def draw(self, surface, player_pos, player_in_firing_state=False):
         # Draw Shay
         pygame.draw.rect(surface, SHAY_COLOR, self.rect)
         
-        # Calculate and draw ricochet indicator
-        if player_pos:
+        # Calculate and draw ricochet indicator, but only if player is in firing state
+        if player_pos and player_in_firing_state:
             # Direction from player to Shay
             to_shay_dir = (self.pos[0] - player_pos[0], self.pos[1] - player_pos[1])
             to_shay_dir = normalize_vector(to_shay_dir)

@@ -1,10 +1,11 @@
 import pygame
 import sys
 from settings import *
-from player import Player
+from player import Player, PLAYER_STATE_MOVING, PLAYER_STATE_FIRING
 from shay import Shay
 from laser import Laser
 from enemy import EnemySpawner
+from utils import distance
 
 class Game:
     def __init__(self, screen):
@@ -74,6 +75,37 @@ class Game:
             # Start game from menu
             if event.key == pygame.K_SPACE and self.game_state == GAME_STATE_MENU:
                 self.game_state = GAME_STATE_WAVE_TRANSITION
+            
+            # Handle spacebar press for entering firing state
+            if event.key == pygame.K_SPACE and self.game_state == GAME_STATE_PLAYING:
+                self.player.enter_firing_state()
+                
+        elif event.type == pygame.KEYUP:
+            # Handle spacebar release for firing laser and returning to moving state
+            if event.key == pygame.K_SPACE and self.game_state == GAME_STATE_PLAYING:
+                # Only fire if player is in firing state (meaning they pressed space earlier)
+                if self.player.is_in_firing_state() and self.player.can_fire:
+                    print("Firing laser on space key release")
+                    laser_direction = self.player.fire_laser(self.shay.pos)
+                    
+                    # If laser direction is valid, activate it
+                    if laser_direction:
+                        print(f"Game received laser direction: {laser_direction}")
+                        hit_enemy = self.laser.fire(
+                            self.player.pos, 
+                            self.shay.pos, 
+                            self.shay, 
+                            self.walls, 
+                            self.enemy_spawner.enemies
+                        )
+                        
+                        # Handle enemy hit if any
+                        if hit_enemy:
+                            print(f"Hit enemy at {hit_enemy.pos}")
+                            self.enemy_spawner.handle_laser_hit(hit_enemy)
+                
+                # Return to moving state
+                self.player.enter_moving_state()
     
     def update(self, dt, keys=None, space_just_pressed=False):
         """Update game state and all entities"""
@@ -100,27 +132,6 @@ class Game:
             
             # Update laser visual effect
             self.laser.update(dt)
-            
-            # Handle laser firing - check for space key just pressed
-            if space_just_pressed and self.player.can_fire:
-                print("Firing laser from space_just_pressed")
-                laser_direction = self.player.fire_laser(self.shay.pos)
-                
-                # If laser direction is valid, activate it
-                if laser_direction:
-                    print(f"Game received laser direction: {laser_direction}")
-                    hit_enemy = self.laser.fire(
-                        self.player.pos, 
-                        self.shay.pos, 
-                        self.shay, 
-                        self.walls, 
-                        self.enemy_spawner.enemies
-                    )
-                    
-                    # Handle enemy hit if any
-                    if hit_enemy:
-                        print(f"Hit enemy at {hit_enemy.pos}")
-                        self.enemy_spawner.handle_laser_hit(hit_enemy)
             
             # Update enemies if in playing state
             if self.game_state == GAME_STATE_PLAYING:
@@ -234,7 +245,8 @@ class Game:
         else:  # Playing or wave transition
             # Draw entities
             self.player.draw(self.screen)
-            self.shay.draw(self.screen, self.player.pos)
+            # Pass the player's firing state to Shay for drawing laser indicators
+            self.shay.draw(self.screen, self.player.pos, self.player.is_in_firing_state())
             self.laser.draw(self.screen)
             self.enemy_spawner.draw(self.screen)
             
@@ -256,10 +268,17 @@ class Game:
             self.screen.blit(debug_surf, (10, HEIGHT - 20)) 
 
     def _destroy_colliding_enemy(self):
-        """Destroy the enemy that is colliding with the player"""
-        for enemy in self.enemy_spawner.enemies[:]:  # Create a copy of the list to safely modify during iteration
-            if enemy.check_player_collision(self.player.rect):
-                # Handle the enemy hit (this already puts it in dying state)
-                self.enemy_spawner.handle_laser_hit(enemy)
-                print(f"Enemy destroyed due to player collision at {enemy.pos}")
-                break  # Only destroy one enemy per frame 
+        """Helper method to find and destroy the enemy that collided with the player"""
+        # Find the closest enemy to the player
+        min_distance = float('inf')
+        colliding_enemy = None
+        
+        for enemy in self.enemy_spawner.enemies:
+            dist = distance(enemy.pos, self.player.pos)
+            if dist < min_distance:
+                min_distance = dist
+                colliding_enemy = enemy
+        
+        # If we found a close enemy, destroy it
+        if colliding_enemy and min_distance < PLAYER_SIZE + ENEMY_SIZE:
+            self.enemy_spawner.handle_player_collision(colliding_enemy) 

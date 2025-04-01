@@ -3,6 +3,10 @@ import math
 from settings import *
 from utils import normalize_vector, distance
 
+# Define player states
+PLAYER_STATE_MOVING = 0
+PLAYER_STATE_FIRING = 1
+
 class Player:
     def __init__(self, pos, walls):
         self.pos = pos
@@ -15,12 +19,19 @@ class Player:
         self.laser_cooldown_timer = 0
         self.can_fire = True
         
+        # State system
+        self.state = PLAYER_STATE_MOVING
+        
         # Invulnerability state
         self.invulnerable = False
         self.invulnerability_timer = 0
         self.invulnerability_duration = PLAYER_INVULNERABILITY_DURATION
         
     def move(self, dt, keys):
+        # Only move if in moving state
+        if self.state != PLAYER_STATE_MOVING:
+            return
+            
         # Get input direction
         input_dir = [0, 0]
         
@@ -129,6 +140,18 @@ class Player:
         """Make the player invulnerable for the set duration"""
         self.invulnerable = True
         self.invulnerability_timer = 0
+        
+    def enter_firing_state(self):
+        """Enter the firing state where player cannot move but shows laser indicator"""
+        self.state = PLAYER_STATE_FIRING
+        
+    def enter_moving_state(self):
+        """Enter the moving state where player can move but doesn't show laser indicator"""
+        self.state = PLAYER_STATE_MOVING
+        
+    def is_in_firing_state(self):
+        """Check if player is in firing state"""
+        return self.state == PLAYER_STATE_FIRING
         
     def update(self, dt, keys, shay_pos):
         self.move(dt, keys)
