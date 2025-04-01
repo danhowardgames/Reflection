@@ -20,7 +20,7 @@ SHAY_SIZE = 35
 SHAY_COLOR = (100, 255, 100)
 SHAY_FOLLOW_SPEED = 2.0  # Higher value = more responsive following
 SHAY_DIRECT_FOLLOW_THRESHOLD = 25  # Distance threshold for direct teleport
-RICOCHET_ANGLE_INCREMENT = 22.5  # In degrees
+RICOCHET_ANGLE_INCREMENT = 2  # In degrees
 
 # Laser Settings
 LASER_COLOR = (255, 50, 50)

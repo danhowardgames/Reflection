@@ -23,7 +23,8 @@ class Laser:
         self.visual_active = True
         self.display_timer = 0
         self.start_pos = player_pos
-        self.shay_pos = shay_pos
+        self.shay_pos = shay_pos  # Initially set to target, may be nullified if blocked
+        self.ricochet_direction = None  # Reset ricochet direction
         
         # Check if laser hits Shay (or is blocked by walls or enemies)
         blocked_by_enemy = self._calculate_path_to_shay(walls, enemies)
@@ -42,6 +43,7 @@ class Laser:
                 return blocked_by_enemy[0]  # Return the enemy to be destroyed
             return None
         
+        # If we reach here, the laser has successfully reached Shay
         # Calculate ricochet direction using Shay's algorithm
         direction_to_shay = (shay_pos[0] - player_pos[0], shay_pos[1] - player_pos[1])
         self.ricochet_direction = shay.calculate_ricochet_vector(direction_to_shay, player_pos)
@@ -72,6 +74,7 @@ class Laser:
             - False if path is clear
             - (hit_enemy, hit_pos) tuple if blocked by an enemy
         """
+        # Calculate direction from player to Shay
         direction_to_shay = (self.shay_pos[0] - self.start_pos[0], self.shay_pos[1] - self.start_pos[1])
         hit_pos, hit_obj = raycast(self.start_pos, direction_to_shay, walls)
         
@@ -87,6 +90,7 @@ class Laser:
             print(f"Laser hit wall at {hit_pos} before reaching Shay")
             self.end_pos = hit_pos
             self.hit_object = hit_obj
+            self.shay_pos = None  # Explicitly set to None since laser didn't reach Shay
             return True
         
         # Now check for enemies in the path to Shay (if any)
@@ -178,6 +182,7 @@ class Laser:
             # If we found an enemy in the path, return it and the hit position
             if closest_hit_pos is not None:
                 self.end_pos = closest_hit_pos
+                self.shay_pos = None  # Explicitly set to None since laser didn't reach Shay
                 return (closest_hit_enemy, closest_hit_pos)
         
         return False
@@ -295,46 +300,66 @@ class Laser:
         bright_factor = 1.0 - time_factor * 0.7
         laser_color = (255, 50 + int(100 * bright_factor), 50 + int(100 * bright_factor))
         
-        # Draw line from player to either Shay or the end point if blocked before Shay
-        if self.shay_pos and self.active:
-            # Normal case - draw line from player to Shay
-            pygame.draw.line(
-                surface,
-                laser_color,
-                self.start_pos,
-                self.shay_pos,
-                pulse_width
-            )
-            
-            # Draw ricochet line from Shay to end point
+        # Calculate impact radius for all impact points
+        impact_radius = 5 + int(3 * math.sin(self.display_timer * 20))
+        
+        # Case 1: Laser blocked before reaching Shay (hits wall or enemy)
+        if not self.shay_pos:
+            # Draw only from player to endpoint
             if self.end_pos:
                 pygame.draw.line(
                     surface,
                     laser_color,
-                    self.shay_pos,
+                    self.start_pos,
                     self.end_pos,
                     pulse_width
                 )
-        else:
-            # Laser was blocked before reaching Shay
+                
+                # Draw impact at end point
+                pygame.draw.circle(
+                    surface, 
+                    laser_color, 
+                    (int(self.end_pos[0]), int(self.end_pos[1])), 
+                    impact_radius
+                )
+            return
+        
+        # Cases 2, 3, 4: Laser reaches Shay
+        # Draw line from player to Shay
+        pygame.draw.line(
+            surface,
+            laser_color,
+            self.start_pos,
+            self.shay_pos,
+            pulse_width
+        )
+        
+        # Draw impact at Shay
+        pygame.draw.circle(
+            surface, 
+            laser_color, 
+            (int(self.shay_pos[0]), int(self.shay_pos[1])), 
+            impact_radius
+        )
+        
+        # Draw reflection line if applicable (cases 2, 3, 4)
+        if self.end_pos and self.ricochet_direction:
+            # Draw ricochet line from Shay to end point
             pygame.draw.line(
                 surface,
                 laser_color,
-                self.start_pos,
-                self.end_pos or self.start_pos,  # In case end_pos is not set
+                self.shay_pos,
+                self.end_pos,
                 pulse_width
             )
             
-        # Draw impact points with pulsing effect
-        impact_radius = 5 + int(3 * math.sin(self.display_timer * 20))
-        
-        # Draw impact at Shay if laser reached it
-        if self.shay_pos and self.active:
-            pygame.draw.circle(surface, laser_color, (int(self.shay_pos[0]), int(self.shay_pos[1])), impact_radius)
-            
-        # Draw impact at end point if it exists
-        if self.end_pos:
-            pygame.draw.circle(surface, laser_color, (int(self.end_pos[0]), int(self.end_pos[1])), impact_radius)
+            # Draw impact at end point of reflection
+            pygame.draw.circle(
+                surface, 
+                laser_color, 
+                (int(self.end_pos[0]), int(self.end_pos[1])), 
+                impact_radius
+            )
     
     def update(self, dt):
         """Update laser visual effect timer"""
